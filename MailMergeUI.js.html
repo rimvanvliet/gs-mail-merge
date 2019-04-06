@@ -1,0 +1,299 @@
+  <script>
+    jQuery.fn.multiselect = function() {
+      $(this).each(function() {
+        var checkboxes = $(this).find("input:checkbox");
+        checkboxes.each(function() {
+          var checkbox = $(this);
+          // Highlight pre-selected checkboxes
+          if (checkbox.prop("checked"))
+            checkbox.parent().addClass("multiselect-on");
+
+          // Highlight checkboxes that the user selects
+          checkbox.click(function() {
+            if (checkbox.prop("checked"))
+              checkbox.parent().addClass("multiselect-on");
+            else
+              checkbox.parent().removeClass("multiselect-on");
+          });
+        });
+      });
+    };
+
+    /**
+     * On document load, assign click handlers to the button
+     */
+    $(function() {
+      getDrafts();
+      getMembers('achternaam');
+      getEmail();
+      $('#sendMails').click(sendMails);
+      $('#reloadDrafts').click(getDrafts);
+      $('#clearSearchBox').click(clearFilter);
+      $('#draft').change(clearMessages);
+      $('#toggleNewDraft').change(toggleNewDraft);
+      $('#plusNewDraft').click(plusNewDraft);
+      $('#selectAllMembers').change(toggleSelectAllMembers);
+      $('#showSelectedOnly').change(toggleShowSelectedOnly);
+      $('#memberType').change(fetchMembers);
+      $('#members').change(setToHeader);
+      $('#testmail').change(toggleTestMail);
+      $('.multiselect').multiselect();
+    });
+
+    /**
+     * Get server-side Drafts and load it into #draft
+     */
+    function getDrafts() {
+      $('#draft').find('option').remove();
+      $('#draft').append('<option>Even geduld ...</option>');
+      $('#reloadDrafts').addClass('fa-spin')
+
+      $('#sendMails').prop('disabled', true);
+      clearMessages();
+      google.script.run
+        .withSuccessHandler(loadDrafts)
+        .withFailureHandler(showError)
+        .getDraftMessages();
+    }
+
+    function toggleNewDraft() {
+      if ($('#toggleNewDraft').prop("checked")) {
+        $('#newDraft').show();
+      } else {
+        $('#newDraft').hide();
+      }
+    }
+
+    function plusNewDraft() {
+      $('#sendMails').prop('disabled', true);
+      clearMessages();
+      google.script.run
+        .withSuccessHandler(loadNewDrafts)
+        .withFailureHandler(function(err) {
+          showError(err, $('#button-send'));
+          enableSendMail();
+        })
+        .createDraftFromDocument($('#newDraftType').val());
+    }
+
+    function loadNewDrafts() {
+      getDrafts();
+      enableSendMail();
+    }
+
+    function loadDrafts(drafts) {
+      $('#draft').find('option').remove();
+      if (drafts.length > 0) {
+        for (var i = 0; i < drafts.length; i++) {
+          $('#draft').append('<option value="' + drafts[i].id + '">' + drafts[i].subject + '</option>');
+        }
+        enableSendMail();
+      }
+      $('#reloadDrafts').removeClass('fa-spin')
+    }
+
+    /**
+     * Get server-side email of the current user and load it into #testmail
+     */
+    function getEmail() {
+      google.script.run
+        .withSuccessHandler(loadEmail)
+        .withFailureHandler(showError)
+        .getEmail();
+    }
+
+    function loadEmail(email) {
+      if (!$('#testmailadres').val()) {
+        $('#testmailadres').val(email);
+      }
+    }
+
+    function toggleTestMail() {
+      if ($('#testmail').prop("checked")) {
+        $('#testmailadres').prop('disabled', false);
+      } else {
+        $('#testmailadres').prop('disabled', true);
+      }
+    }
+
+    /**
+     * Get server-side Members and load it into #members
+     */
+    function fetchMembers() {
+      switch ($('#memberType').val()) {
+        case 'allMembers':
+          $('#selectAllMembers').removeAttr('checked');
+          getMembers('achternaam');
+          break;
+        case 'newMembers':
+          $('#selectAllMembers').removeAttr('checked');
+          getMembers('lidVanaf');
+          break;
+        case 'tfDigitaal':
+          $('#selectAllMembers').prop("checked", true);
+          getMembers('achternaam', 'tfDigitaal');
+          break;
+        case 'jeugd':
+          $('#selectAllMembers').prop("checked", true);
+          getMembers('achternaam', 'jeugd');
+          break;
+      }
+    }
+
+    function getMembers(order, filter) {
+      $('#members').find('label').remove();
+      $('#members').append('<label>Even geduld ...</label>');
+      $('#reload-members').addClass('fa-spin')
+
+      $('#sendMails').prop('disabled', true);
+      clearMessages();
+      google.script.run
+        .withSuccessHandler(loadMembers)
+        .withFailureHandler(function(err) {
+          showError(err, $('#button-send'));
+          enableSendMail();
+        })
+        .getMembers(order, filter);
+    }
+
+    function loadMembers(members) {
+      $('#members').find('label').remove();
+      var allMembersChecked = $('#selectAllMembers').prop("checked") ? 'checked' : '';
+      for (var i = 0; i < members.length; i++) {
+        $('#members').append('<label><input type="checkbox" class="listedMembers" ' + allMembersChecked + ' value="' + members[i].userName + '"/>' + members[i].displayName + '</label>');
+      }
+      setToHeader();
+      enableSendMail();
+    }
+
+    function filterMembers() {
+      //clearShowSelectedOnly();
+      // Declare variables
+      var input, filter, members;
+      input = document.getElementById('memberSearchBox');
+      filter = input.value.toUpperCase();
+      members = $('#members').find('label');
+
+      // Loop through all list items, and hide those who don't match the search query
+      for (var i = 0; i < members.length; i++) {
+        if (members[i].innerText.toUpperCase().indexOf(filter) > -1) {
+          members[i].style.display = "";
+        } else {
+          members[i].style.display = "none";
+        }
+      }
+    }
+    
+    function clearFilter() {
+      $('#memberSearchBox').val('');
+      filterMembers();
+    }
+
+    function toggleShowSelectedOnly() {
+      clearFilter();
+      if ($('#showSelectedOnly').prop("checked")) {
+        $('label').has('input.listedMembers:not(:checked)').hide();
+      } else {
+        $('label').has('input.listedMembers').show();
+      }
+    }
+
+    function clearShowSelectedOnly() {
+      if ($('#showSelectedOnly').prop("checked")) {
+        $('#showSelectedOnly').removeAttr('checked');
+        //$('label').has('input.listedMembers').show();
+      }
+    }
+
+    function toggleSelectAllMembers() {
+      clearFilter();
+      clearShowSelectedOnly();
+      if ($('#selectAllMembers').prop("checked")) {
+        $('.listedMembers').prop("checked", true);
+      } else {
+        $('.listedMembers').removeAttr('checked');
+      }
+      setToHeader();
+    }
+
+    function setToHeader() {
+      var selectedText = '';
+      var countSelected = $('.listedMembers:checked').size();
+
+      switch (countSelected) {
+        case 0:
+          selectedText = 'Geen leden geselecteerd.';
+          $('#sendMails').prop('disabled', true);
+          break;
+        case 1:
+          selectedText = '1 lid geselecteerd.';
+          enableSendMail();
+          break;
+        case $('.listedMembers').size():
+          selectedText = 'Alle ' + countSelected + ' leden geselecteerd.';
+          enableSendMail();
+          break;
+        default:
+          selectedText = countSelected + ' leden geselecteerd.';
+          enableSendMail();
+      }
+      $('#toHeader').text(selectedText);
+    }
+
+    function sendMails() {
+      if ($('#testmail').prop("checked") && !validateEmail($('#testmailadres').val())) {
+        showError('Ongeldig emailadres', '#testmailadres');
+      } else {
+        $('#sendMails').prop('disabled', true);
+        clearMessages();
+        var draftId = $('#draft').val();
+        var to = $('.listedMembers:checked').map(function() {
+          return $(this).val();
+        }).get();
+        console.log(to);
+        var testmail = $('#testmail').prop("checked") ? $('#testmailadres').val() : '';
+        google.script.run
+          .withSuccessHandler(function() {
+            showSuccess('Mail succesvol verzonden.', $('#button-send'));
+            enableSendMail();
+          })
+          .withFailureHandler(function(err) {
+            showError(err, $('#button-send'));
+            enableSendMail();
+          })
+          .sendFromDraft(draftId, to, testmail);
+      }
+    }
+    
+    function enableSendMail() {
+      if ($('#draft > option').length > 0 && $('.listedMembers:checked').size() > 0) {
+        $('#sendMails').prop('disabled', false);
+      }
+    }
+
+    /**
+     * Inserts a div that contains an error message after a given element.
+     *
+     * @param msg The error message to display.
+     * @param element The element after which to display the error.
+     */
+    function showError(msg, element) {
+      var div = $('<div id="error" class="error">' + msg + '</div>');
+      $(element).after(div);
+    }
+
+    function showSuccess(msg, element) {
+      var div = $('<div id="success" class="success">' + msg + '</div>');
+      $(element).after(div);
+    }
+
+    function clearMessages() {
+      $('#error').remove();
+      $('#success').remove();
+    }
+
+    function validateEmail(email) {
+      var emailReg = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,4})?$/;
+      return (email != '' && emailReg.test(email));
+    }
+  </script>

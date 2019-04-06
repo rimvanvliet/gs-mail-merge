@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+  <!-- The CSS package above applies Google styling to buttons and other elements. -->
+
+  <style>
+    .branding-below {
+      bottom: 56px;
+      top: 0;
+    }
+
+    .branding-text {
+      left: 7px;
+      position: relative;
+      top: 3px;
+    }
+
+    .logo {
+      vertical-align: middle;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="sidebar branding-below">
+    <form>
+      <div class="block form-group">
+        <label for="select">Kies het kwartaal</label>
+        <select id="kwartaal">
+            <option selected value=1>1ste kwartaal</option>
+            <option value=2>2de kwartaal</option>
+            <option value=3>3de kwartaal</option>
+            <option value=4>4de kwartaal</option>
+          </select>
+      </div>
+
+      <div class="block form-group">
+        <label for="select">Kies het jaar</label>
+        <select id="jaar">
+          </select>
+      </div>
+
+      <div class="block" id="button-bar">
+        <button id="vul-verjaardagenlijst" class="action">Vul verjaardagenlijst</button>
+        <button id="maak-leeg">Maak leeg</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="sidebar bottom">
+    <img alt="Add-on logo" class="logo" src="https://drive.google.com/thumbnail?id=1Z9Z8oUbgtJNovUoP39_eV4nFJldOOnl4" width="30" height="30"/>
+    <span class="gray branding-text">Eerste Twelose Toerclub</span>
+  </div>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js">
+  </script>
+  <script>
+    /**
+     * On document load, assign click handlers to the button
+     * Populate the Years with the current & next year
+     */
+    $(function() {
+      $('#vul-verjaardagenlijst').click(vulVerjaardagenlijst);
+      $('#maak-leeg').click(maakLeeg);
+      var thisYear = (new Date()).getFullYear();
+      var nextYear = thisYear + 1;
+      $('#jaar').append('<option selected>' + thisYear + '</option>');
+      $('#jaar').append('<option>' + nextYear + '</option>');
+    });
+
+    /**
+     * Runs server-side toonVerjaardagenLijst
+     */
+    function vulVerjaardagenlijst() {
+      console.log("vulverjaardagen")
+      this.disabled = true;
+      $('#error').remove();
+      var kwartaal = $('#kwartaal').val();
+      if (!(kwartaal >= 1 && kwartaal <= 4)) {
+        showError("Kies een kwartaal", $('#button-bar'));
+      } else {
+        var jaar = $('#jaar').val();
+        google.script.run
+          .withSuccessHandler(
+            function() {
+              $('#vul-verjaardagenlijst').prop("disabled", false);
+            })
+          .withFailureHandler(
+            function(msg, element) {
+              showError(msg, $('#button-bar'));
+              element.disabled = false;
+            })
+          .toonVerjaardagenLijst(kwartaal, jaar);
+      }
+    }
+
+    function maakLeeg() {
+      this.disabled = true;
+      $('#error').remove();
+      google.script.run
+        .withSuccessHandler(
+          function() {
+            $('#maak-leeg').prop("disabled", false);
+          })
+        .withFailureHandler(
+          function(msg, element) {
+            showError(msg, $('#button-bar'));
+            element.disabled = false;
+          })
+        .maakLijstLeeg();
+    }
+
+    /**
+     * Inserts a div that contains an error message after a given element.
+     *
+     * @param msg The error message to display.
+     * @param element The element after which to display the error.
+     */
+    function showError(msg, element) {
+      var div = $('<div id="error" class="error">' + msg + '</div>');
+      $(element).after(div);
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <link rel="stylesheet" href="https://ssl.gstatic.com/docs/script/css/add-ons1.css">
+  <!-- The CSS package above applies Google styling to buttons and other elements. -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
+
+  <?!= include('MailMergeUI.css.html'); ?>
+</head>
+
+<body>
+  <div class="sidebar">
+    <h3>Wat?</h3>
+
+    <div class="block">
+      <div>
+        <input type="checkbox" id="toggleNewDraft" unchecked>
+        <label>Nieuwe conceptmail klaarzetten.</label>
+      </div>
+      <div id="newDraft" class='hide'>
+        <select id='newDraftType'>
+          <option value='newsletter'>Nieuwsbrief</option>
+          <option value='welcome'>Welkomst mail</option>
+          <option value='privacy'>Geheimhoudingsverklaring</option>
+          <option value='permission'>Toestemmingsverklaring</option>
+        </select>
+        <div class="tooltip">
+          <i class="fa fa-plus-circle" id='plusNewDraft'></i>
+          <span class="tooltiptext">Nieuw concept mail klaarzetten.</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="block">
+      <label for="draft">Kies de conceptmail die je wil versturen:</label>
+      <select id="draft"></select>
+      <div class="tooltip">
+        <i class="fa fa-refresh" title='Opnieuw laden' id='reloadDrafts'></i>
+        <span class="tooltiptext">Als je de conceptmail hebt gewijzigd, moet je opnieuw laden.</span>
+      </div>
+    </div>
+
+    <h3>Aan wie?</h3>
+    <div class="inline form-group">
+      <label for="memberType">Kies aan welke doelgroep je mail wil versturen:</label>
+      <select id="memberType">
+          <option value="allMembers">Alle leden</option>
+          <option value="newMembers">Nieuwe leden</option>
+          <option value="tfDigitaal">Toerflits digitaal leden</option>
+          <option value="jeugd">Jeugd leden</option>
+        </select>
+    </div>
+    <div class="block">
+      <h4 id='toHeader'>...</h4>
+      <div>
+        <input type='checkbox' id='showSelectedOnly' unchecked>
+        <label>Toon alleen geselecteerde leden</label>
+      </div>
+      <div>
+        <input type="text" id="memberSearchBox" onkeyup="filterMembers()" placeholder="Zoek een lid ...">
+        <span class='fa fa-close clearInput' id='clearSearchBox'></span>
+      </div>
+      <div>
+        <input type='checkbox' id='selectAllMembers' unchecked>
+        <label>Alle leden (de)selecteren</label>
+      </div>
+
+      <div class='multiselect' id='members'>
+        <label>Even geduld ...</label>
+      </div>
+    </div>
+
+    <div class="block">
+      <div>
+        <input type="checkbox" id="testmail" checked>
+        <label>Alleen 1 testmail versturen aan:</label>
+      </div>
+      <div id='testmailBlock'>
+        <input type="text" id="testmailadres" placeholder="emailadres">
+      </div>
+    </div>
+
+    <div class="block" id="button-send">
+      <button id="sendMails" class="action">Verstuur mail</button>
+    </div>
+
+  </div>
+
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js">
+  </script>
+  <?!= include('MailMergeUI.js.html'); ?>
+
+</body>
+
+</html>
