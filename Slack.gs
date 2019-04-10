@@ -4,7 +4,7 @@ function checkSlackTegenLedenlijst() {
   
   var slackQuery = "https://slack.com/api/users.list"
   var slackHeaders = {
-       Authorization:"Bearer xoxp-549892792070-548675996885-583185563361-bdc04f3ac9d98c05f561c6d4e8b16754"
+       Authorization:"Bearer " + slackKey
   }
   var slackOptions = {
         "method" : "get",
